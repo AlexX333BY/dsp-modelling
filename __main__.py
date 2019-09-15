@@ -30,7 +30,8 @@ def task_1():
 
         chart_data = []
         for harmonic_params in variable_parameters_choice[args.parameter]:
-            chart_data.append(LabeledChartData(list(HarmonicSignalGenerator(harmonic_params).get_signal(args.period)),
+            signal = list(HarmonicSignalGenerator(harmonic_params).get_signal(args.period))
+            chart_data.append(LabeledChartData(range(len(signal)), signal,
                                                ', '.join(['A: ' + str(harmonic_params.amplitude),
                                                           'f: ' + str(harmonic_params.frequency),
                                                           'phi: ' + str(harmonic_params.initial_phase)])))
@@ -44,7 +45,8 @@ def task_1():
         harmonic_parameters = [HarmonicParameters(1, 1, 0), HarmonicParameters(1, 2, math.pi / 4),
                                HarmonicParameters(1, 3, math.pi / 6), HarmonicParameters(1, 4, 2 * math.pi),
                                HarmonicParameters(1, 5, math.pi)]
-        draw_chart(LabeledChartData(list(PolyHarmonicSignalGenerator(harmonic_parameters).get_signal(period)), None))
+        signal = list(PolyHarmonicSignalGenerator(harmonic_parameters).get_signal(period))
+        draw_chart(LabeledChartData(range(len(signal)), signal, None))
 
     def linear():
         parser = argparse.ArgumentParser()
@@ -60,9 +62,10 @@ def task_1():
         harmonic_parameters = [HarmonicParameters(1, 1, 0), HarmonicParameters(1, 2, math.pi / 4),
                                HarmonicParameters(1, 3, math.pi / 6), HarmonicParameters(1, 4, 2 * math.pi),
                                HarmonicParameters(1, 5, math.pi)]
-        draw_chart(LabeledChartData(list(LinearPolyHarmonicSignalGenerator(harmonic_parameters)
-                                         .get_signal(args.period, args.period_iterations, args.mutation_per_period,
-                                                     MutationType[args.mutation_law])), None))
+        signal = list(LinearPolyHarmonicSignalGenerator(harmonic_parameters)
+                      .get_signal(args.period, args.period_iterations, args.mutation_per_period,
+                                  MutationType[args.mutation_law]))
+        draw_chart(LabeledChartData(range(len(signal)), signal, None))
 
     sub_tasks_callbacks = {'harmonic': harmonic, 'poly-harmonic': poly_harmonic, 'linear': linear}
 
@@ -72,7 +75,39 @@ def task_1():
     sub_tasks_callbacks[parser.parse_known_args()[0].sub_task]()
 
 
-def task_2(): raise NotImplementedError
+def task_2():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--with-phase', action='store_true', help='should phase be used', dest='with_phase')
+    parser.add_argument('-N', '--period', action='store', required=False, help='signal period', dest='period',
+                        type=int, default=512)
+    args = parser.parse_known_args()[0]
+    initial_phase = math.pi / 32 if args.with_phase else 0
+    k_generator = lambda period: math.ceil(3 * period / 4)
+
+    amplitude_error_chart_data = {}
+    root_mean_square_error_chart_data = {}
+
+    for signal in HarmonicSignalGenerator2(initial_phase, k_generator).get_signals(args.period):
+        listed_signal = list(signal)
+        signal_length = len(listed_signal)
+
+        analyzer = HarmonicSignalAnalyzer(listed_signal)
+        print("Сигнал с M =", signal_length, ":")
+        print("\tсреднее квадратическое значение:", analyzer.get_root_mean_square_value())
+        print("\tсреднее квадратическое отклонение:", analyzer.get_standard_deviation())
+        print("\tамплитуда:", analyzer.get_amplitude())
+        root_mean_square_error = analyzer.get_root_mean_square_value_error()
+        root_mean_square_error_chart_data[signal_length] = root_mean_square_error
+        print("\tпогрешность СКЗ:", root_mean_square_error)
+        amplitude_error = analyzer.get_amplitude_error()
+        amplitude_error_chart_data[signal_length] = amplitude_error
+        print("\tпогрешность амплитуды:", amplitude_error)
+
+    draw_charts([
+        LabeledChartData(amplitude_error_chart_data.keys(), amplitude_error_chart_data.values(), "Amplitude error"),
+        LabeledChartData(root_mean_square_error_chart_data.keys(), root_mean_square_error_chart_data.values(),
+                         "Root mean square error")
+    ])
 
 
 def main():
