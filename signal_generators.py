@@ -34,7 +34,7 @@ class PolyHarmonicSignalGenerator:
 
 class MutationType(Enum):
     INCREMENT = 1
-    DECREMENT = 2
+    DECREMENT = -1
 
 
 HarmonicMutations = namedtuple('HarmonicMutations',
@@ -47,7 +47,7 @@ class LinearPolyHarmonicSignalGenerator:
 
     def get_signal(self, period, period_iterations, mutation_per_period, mutation_type):
         mutation_per_signal_part = mutation_per_period / period
-        mutation_multiplier = -1 if mutation_type == MutationType.DECREMENT else 1
+        mutation_multiplier = mutation_type.value
         mutations = []
         for harmonic_params in self.__harmonic_params_collection:
             mutations.append(
@@ -55,8 +55,11 @@ class LinearPolyHarmonicSignalGenerator:
                                   harmonic_params.frequency * mutation_per_signal_part * mutation_multiplier,
                                   harmonic_params.initial_phase * mutation_per_signal_part * mutation_multiplier))
         for n in range(period * period_iterations):
+            new_harmonic_params_collection = []
             for index, harmonic_params in enumerate(self.__harmonic_params_collection):
-                harmonic_params.amplitude += mutations[index].amplitude_mutation
-                harmonic_params.frequency += mutations[index].frequency_mutation
-                harmonic_params.initial_phase += mutations[index].initial_phase_mutation
+                new_harmonic_params_collection.append(
+                    HarmonicParameters(harmonic_params.amplitude + mutations[index].amplitude_mutation,
+                                       harmonic_params.frequency + mutations[index].frequency_mutation,
+                                       harmonic_params.initial_phase + mutations[index].initial_phase_mutation))
+            self.__harmonic_params_collection = new_harmonic_params_collection
             yield PolyHarmonicSignalGenerator(self.__harmonic_params_collection).get_signal_part(n, period)
