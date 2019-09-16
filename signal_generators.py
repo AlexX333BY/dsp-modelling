@@ -116,12 +116,12 @@ class HarmonicSignalAnalyzer:
     def get_amplitude(self):
         max_amplitude = 0
         signal_length = len(self.__signal)
-        for k in range(signal_length):
+        for k in range(math.floor(signal_length / 2)):
             complex_amplitude = complex()
             for n, x in enumerate(self.__signal):
                 trigonometric_arg = 2 * math.pi * k * n / signal_length
                 complex_amplitude += x * (math.cos(trigonometric_arg) + 1j * math.sin(trigonometric_arg))
-            max_amplitude = max(max_amplitude, math.sqrt(complex_amplitude.real ** 2 + complex_amplitude.imag ** 2)
+            max_amplitude = max(max_amplitude, 2 * math.sqrt(complex_amplitude.real ** 2 + complex_amplitude.imag ** 2)
                                 / signal_length)
         return max_amplitude
 
